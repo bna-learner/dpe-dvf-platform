@@ -29,3 +29,4 @@ Les statuts possibles: Proposé, Accepté, Déprécié, Remplacé par ADR-NNNN
 | N° | Titre | Statut |
 |---|---|---|
 | [0001](0001-structure-du-projet.md) | Structure du projet et outillage Python | Accepté |
+| [0002](0002-strategie-de-branches.md) | Stratégie de branches et d'intégration| Accepté |
