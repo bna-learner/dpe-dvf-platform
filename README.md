@@ -24,3 +24,6 @@ dpe-dvf-platform/
 ├── pyproject.toml        # Dépendances et configuration des outils
 └── uv.lock               # Versions exactes des dépendances
 ```
+
+## Décision d'architecture
+Les décisions d'arcitecture structurantes sont documentées sous forme d'ADR dans [`docs/adr`](`docs/adr`).
