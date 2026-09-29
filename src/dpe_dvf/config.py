@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,3 +20,4 @@ class Settings(BaseSettings):
     max_retries: int = Field(default=5, ge=0)  # 6 tentatives au total
     backoff_base_seconds: float = Field(default=2.0, gt=0)
     backoff_max_seconds: float = Field(default=60.0, gt=0)
+    dossier_bronze: Path = Path("data/bronze")

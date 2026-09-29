@@ -52,7 +52,7 @@ class AdemeClient:
     def __exit__(self, *exc_info: object) -> None:
         self.close()
 
-    # --- Appel d'une page --------------------------------------------------
+    # --- Appel d'une page
 
     def fetch_page(self, url: str, params: Params | None = None) -> dict[str, Any]:
         """Récupère une page et la renvoie décodée.
@@ -116,6 +116,7 @@ class AdemeClient:
                     delai,
                 )
                 self._sleep(delai)
+        raise AssertionError("Point inatteignable")
 
     def _delai_avant_reessai(self, tentative: int, erreur: TransientAdemeError) -> float:
         """Calcule l'attente : Retry-After si fourni, sinon backoff exponentiel avec jitter."""
@@ -125,7 +126,7 @@ class AdemeClient:
         plafonne = min(exponentiel, self._settings.backoff_max_seconds)
         return plafonne * random.uniform(0.5, 1.0)
 
-    # --- Parcours complet --------------------------------------------------
+    # --- Parcours complet
 
     def iter_pages(self, dataset_id: str, params: Params | None = None) -> Iterator[list[Ligne]]:
         """Parcourt toutes les pages d'un jeu de données en suivant le curseur `next`.
