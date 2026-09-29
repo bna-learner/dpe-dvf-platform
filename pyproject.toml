@@ -41,3 +41,6 @@ addopts = "-ra --strict-markers"
 strict = true
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
+
+[project.scripts]
+dpe-ingestion = "dpe_dvf.ingestion.cli:main"
