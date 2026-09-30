@@ -116,7 +116,7 @@ class AdemeClient:
                     delai,
                 )
                 self._sleep(delai)
-        raise AssertionError("Point inatteignable")
+        raise AssertionError("Point inatteignable")  # pragma: no cover
 
     def _delai_avant_reessai(self, tentative: int, erreur: TransientAdemeError) -> float:
         """Calcule l'attente : Retry-After si fourni, sinon backoff exponentiel avec jitter."""
