@@ -1,7 +1,9 @@
 from datetime import date
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+ANNEE_CONSTRUCTION_MIN = 1000
 
 
 class ClasseDPE(StrEnum):
@@ -20,6 +22,7 @@ class DPE(BaseModel):
     # Administratif
     numero_dpe: str
     date_etablissement_dpe: date | None = None
+    date_derniere_modification_dpe: date | None = None
     date_reception_dpe: date | None = None
 
     # Bilan DPE
@@ -28,8 +31,9 @@ class DPE(BaseModel):
 
     # Caractéristiques bâtiments
     periode_construction: str | None = None
-    annee_construction: int | None = Field(default=None, ge=1000, le=2026)
+    annee_construction: int | None = None
     surface_habitable_logement: float | None = Field(default=None, gt=0)
+    type_batiment: str | None = None
 
     # Consommation énergie primaire (ep)
     conso_5_usages_ep: float | None = Field(default=None, gt=0)
@@ -45,3 +49,14 @@ class DPE(BaseModel):
     statut_geocodage: str | None = None
     coordonnee_cartographique_x_ban: float | None = None
     coordonnee_cartographique_y_ban: float | None = None
+    code_departement_ban: str | None = None
+    code_region_ban: str | None = None
+
+    @field_validator("annee_construction")
+    @classmethod
+    def _ecarter_annee_impossible(cls, annee: int | None) -> int | None:
+        """Une année antérieure à 1000 ou
+        future est une erreur de saisie : la valeur est écartée."""
+        if annee is not None and not ANNEE_CONSTRUCTION_MIN <= annee <= date.today().year:
+            return None
+        return annee

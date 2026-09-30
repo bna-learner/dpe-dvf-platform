@@ -55,10 +55,22 @@ def test_score_ban_sup_1(dpe_valide: dict[str, Any]) -> None:
         DPE(**dpe_valide)
 
 
-def test_annee_construction_invalide(dpe_valide: dict[str, Any]) -> None:
+def test_annee_construction_future_ecartee(dpe_valide: dict[str, Any]) -> None:
+    dpe_valide["annee_construction"] = 3000
+    dpe = DPE(**dpe_valide)
+    assert dpe.annee_construction is None
+
+
+def test_annee_construction_trop_ancienne_ecartee(dpe_valide: dict[str, Any]) -> None:
     dpe_valide["annee_construction"] = 500
-    with pytest.raises(ValidationError, match="annee_construction"):
-        DPE(**dpe_valide)
+    dpe = DPE(**dpe_valide)
+    assert dpe.annee_construction is None
+
+
+def test_annee_construction_plausible_conservee(dpe_valide: dict[str, Any]) -> None:
+    dpe_valide["annee_construction"] = 1975
+    dpe = DPE(**dpe_valide)
+    assert dpe.annee_construction == 1975
 
 
 def test_conversion_date_reception_dpe(dpe_valide: dict[str, Any]) -> None:

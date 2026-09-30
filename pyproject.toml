@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",
+    "pyarrow>=25.0.1",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
 ]
@@ -44,3 +45,8 @@ plugins = ["pydantic.mypy"]
 
 [project.scripts]
 dpe-ingestion = "dpe_dvf.ingestion.cli:main"
+dpe-silver = "dpe_dvf.transformation.silver:main"
+
+[[tool.mypy.overrides]]
+module = ["pyarrow", "pyarrow.*"]
+ignore_missing_imports = true
