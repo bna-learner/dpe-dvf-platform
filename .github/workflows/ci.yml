@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualite:
+    name: Qualité et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+
+      - name: Installer les dépendances
+        run: uv sync --locked
+
+      - name: Lint (ruff)
+        run: uv run ruff check src/ tests/
+
+      - name: Formatage (ruff)
+        run: uv run ruff format --check src/ tests/
+
+      - name: Types (mypy)
+        run: uv run mypy src/ tests/
+
+      - name: Tests et couverture (pytest)
+        run: uv run pytest --cov=dpe_dvf --cov-report=term-missing --cov-fail-under=90
