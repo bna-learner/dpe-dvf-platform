@@ -21,3 +21,4 @@ class Settings(BaseSettings):
     backoff_base_seconds: float = Field(default=2.0, gt=0)
     backoff_max_seconds: float = Field(default=60.0, gt=0)
     dossier_bronze: Path = Path("data/bronze")
+    dossier_silver: Path = Path("data/silver")
