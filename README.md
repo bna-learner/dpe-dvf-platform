@@ -1,3 +1,5 @@
+[![CI](https://github.com/bna-learner/dpe-dvf-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/bna-learner/dpe-dvf-platform/actions/workflows/ci.yml)
+
 # dpe_dvf_platform
 Plateforme data sur AWS croisant les données DPE (logements neufs et logements existants) de l'ADEME ainsi que les demandes de valeurs foncières (DVF), pour du reporting et cas d'IA générative (recommandations de rénovation énergétique pour augmenter la valeur d'un logement).
 
