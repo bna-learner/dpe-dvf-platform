@@ -218,3 +218,13 @@ __marimo__/
 .streamlit/secrets.toml
 data/
 explore.py
+src/.env
+demo_client.py
+notebook/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+tfplan
