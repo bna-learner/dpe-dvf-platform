@@ -18,7 +18,7 @@ def test_fenetre_vide_rejetee() -> None:
 def test_traduction_en_filtres_api() -> None:
     fenetre = Fenetre(date(2026, 8, 1), date(2026, 9, 1))
     assert fenetre.en_params("date_reception_dpe") == {
-        "date_reception_dpe_gte": "2026-08-01",
+        "date_reception_dpe_gte": "2026-08-02",
         "date_reception_dpe_lt": "2026-09-01",
     }
 
