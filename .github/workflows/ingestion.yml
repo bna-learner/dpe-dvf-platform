@@ -1,0 +1,96 @@
+name: Ingestion DPE
+
+on:
+  schedule:
+    - cron: "0 5 * * 1" # chaque lundi à 5 h UTC
+  workflow_dispatch:
+    inputs:
+      debut:
+        description: "Premier jour inclus (AAAA-MM-JJ). Vide : il y a 8 jours."
+        required: false
+        default: ""
+      fin:
+        description: "Premier jour exclu (AAAA-MM-JJ). Vide : demain."
+        required: false
+        default: ""
+      dataset:
+        description: "Jeu(x) de données à ingérer."
+        type: choice
+        options: [tous, existant, neuf]
+        default: tous
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ingestion-dpe
+  cancel-in-progress: false
+
+jobs:
+  ingestion:
+    name: Ingestion bronze et silver
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+
+    env:
+      BUCKET_BRONZE: ${{ vars.BUCKET_BRONZE }}
+      BUCKET_SILVER: ${{ vars.BUCKET_SILVER }}
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+
+      - name: Installer les dépendances (sans les outils de dev)
+        run: uv sync --locked --no-dev
+
+      - name: S'authentifier auprès d'AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_INGESTION_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 21600
+          role-session-name: ingestion-${{ github.run_id }}
+          mask-aws-account-id: true
+
+      - name: Vérifier l'identité AWS
+        run: aws sts get-caller-identity
+
+      - name: Calculer la fenêtre d'ingestion
+        id: fenetre
+        env:
+          ENTREE_DEBUT: ${{ inputs.debut }}
+          ENTREE_FIN: ${{ inputs.fin }}
+          ENTREE_DATASET: ${{ inputs.dataset }}
+        run: |
+          echo "debut=${ENTREE_DEBUT:-$(date -u -d '8 days ago' +%F)}" >> "$GITHUB_OUTPUT"
+          echo "fin=${ENTREE_FIN:-$(date -u -d 'tomorrow' +%F)}" >> "$GITHUB_OUTPUT"
+          echo "dataset=${ENTREE_DATASET:-tous}" >> "$GITHUB_OUTPUT"
+
+      - name: Ingérer vers bronze
+        env:
+          DEBUT: ${{ steps.fenetre.outputs.debut }}
+          FIN: ${{ steps.fenetre.outputs.fin }}
+          DATASET: ${{ steps.fenetre.outputs.dataset }}
+        run: uv run dpe-ingestion --dataset "$DATASET" --debut "$DEBUT" --fin "$FIN"
+
+      - name: Envoyer bronze sur S3 (données, puis manifestes)
+        run: |
+          aws s3 sync data/bronze "s3://$BUCKET_BRONZE/" --exclude "*_manifest.json"
+          aws s3 sync data/bronze "s3://$BUCKET_BRONZE/" --exclude "*" --include "*_manifest.json"
+
+      - name: Récupérer l'ensemble de bronze depuis S3
+        run: aws s3 sync "s3://$BUCKET_BRONZE/" data/bronze
+
+      - name: Recalculer silver
+        run: uv run dpe-silver
+
+      - name: Envoyer silver sur S3 (données, puis manifestes)
+        run: |
+          aws s3 sync data/silver "s3://$BUCKET_SILVER/" --exclude "*_manifest.json"
+          aws s3 sync data/silver "s3://$BUCKET_SILVER/" --exclude "*" --include "*_manifest.json"
