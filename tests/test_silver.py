@@ -9,6 +9,7 @@ from dpe_dvf.ingestion.bronze import NOM_MANIFESTE, chemin_lot, ecrire_lot
 from dpe_dvf.ingestion.fenetres import Fenetre
 from dpe_dvf.ingestion.models import DPE
 from dpe_dvf.transformation.silver import (
+    COLONNES_DERIVEES,
     COLONNES_PROVENANCE,
     SCHEMA_SILVER,
     lots_complets,
@@ -43,7 +44,7 @@ def creer_lot_bronze(racine: Path) -> Path:
 
 
 def test_le_schema_suit_le_modele() -> None:
-    attendues = list(DPE.model_fields) + COLONNES_PROVENANCE
+    attendues = list(DPE.model_fields) + COLONNES_PROVENANCE + COLONNES_DERIVEES
     assert sorted(SCHEMA_SILVER.names) == sorted(attendues)
 
 

@@ -18,6 +18,7 @@ from pydantic import ValidationError
 from dpe_dvf.config import Settings
 from dpe_dvf.ingestion.bronze import NOM_MANIFESTE
 from dpe_dvf.ingestion.models import DPE
+from dpe_dvf.transformation.geographie import departement_depuis_code_postal
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,9 @@ SCHEMA_SILVER = pa.schema(
         ("code_insee_ban", pa.string()),
         ("code_departement_ban", pa.string()),
         ("code_region_ban", pa.string()),
+        ("code_postal_brut", pa.string()),
+        ("code_departement", pa.string()),
+        ("source_departement", pa.string()),
         ("coordonnee_cartographique_x_ban", pa.float64()),
         ("coordonnee_cartographique_y_ban", pa.float64()),
         # Provenance : d'où vient chaque ligne
@@ -86,6 +90,19 @@ def _partition(manifeste: dict[str, str]) -> Path:
         / f"date_ingestion={manifeste['date_ingestion']}"
         / f"fenetre={manifeste['fenetre_debut']}_{manifeste['fenetre_fin']}"
     )
+
+
+COLONNES_DERIVEES = ["code_departement", "source_departement"]
+
+
+def _departement(dpe: DPE) -> dict[str, str | None]:
+    """Département retenu : celui de la BAN, sinon celui déduit du code postal saisi."""
+    if dpe.code_departement_ban is not None:
+        return {"code_departement": dpe.code_departement_ban, "source_departement": "ban"}
+    deduit = departement_depuis_code_postal(dpe.code_postal_brut)
+    if deduit is not None:
+        return {"code_departement": deduit, "source_departement": "code_postal"}
+    return {"code_departement": None, "source_departement": None}
 
 
 def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver:
@@ -132,7 +149,7 @@ def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver
                 if brut.get(champ) is not None and getattr(dpe, champ) is None:
                     valeurs_ecartees[champ] += 1
 
-            tampon.append({**dpe.model_dump(), **provenance})
+            tampon.append({**dpe.model_dump(), **provenance, **_departement(dpe)})
             nb_valides += 1
             if len(tampon) >= TAILLE_TAMPON:
                 writer.write_table(pa.Table.from_pylist(tampon, schema=SCHEMA_SILVER))

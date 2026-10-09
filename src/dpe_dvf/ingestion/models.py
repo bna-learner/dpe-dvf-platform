@@ -45,6 +45,7 @@ class DPE(BaseModel):
     nom_commune_brut: str | None = None
     adresse_brut: str | None = None
     code_postal_ban: str | None = None
+    code_postal_brut: str | None = None
     code_insee_ban: str | None = None
     statut_geocodage: str | None = None
     coordonnee_cartographique_x_ban: float | None = None
@@ -60,3 +61,14 @@ class DPE(BaseModel):
         if annee is not None and not ANNEE_CONSTRUCTION_MIN <= annee <= date.today().year:
             return None
         return annee
+
+    @field_validator("code_postal_brut", mode="before")
+    @classmethod
+    def _normaliser_code_postal(cls, valeur: object) -> str | None:
+        """Ramène le code postal à 5 chiffres ; l'API le fournit parfois comme un entier."""
+        if valeur is None or isinstance(valeur, bool):
+            return None
+        texte = str(valeur).strip()
+        if not texte.isdigit() or not 4 <= len(texte) <= 5:
+            return None  # valeur aberrante : écartée et comptée en silver
+        return texte.zfill(5)
