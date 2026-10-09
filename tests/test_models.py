@@ -83,3 +83,14 @@ def test_ajout_de_champ_supplementaire(dpe_valide: dict[str, Any]) -> None:
     dpe_valide["hauteur_sous_plafond"] = 12
     dpe = DPE(**dpe_valide)
     assert "hauteur_sous_plafond" not in dpe.model_dump()
+
+
+@pytest.mark.parametrize(
+    ("valeur_api", "attendu"),
+    [(1000, "01000"), (75011, "75011"), ("75011", "75011"), ("ABCDE", None), (123, None)],
+)
+def test_code_postal_normalise(
+    dpe_valide: dict[str, Any], valeur_api: object, attendu: str | None
+) -> None:
+    dpe_valide["code_postal_brut"] = valeur_api
+    assert DPE(**dpe_valide).code_postal_brut == attendu
