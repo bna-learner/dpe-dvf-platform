@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       debut:
-        description: "Premier jour inclus (AAAA-MM-JJ). Vide : il y a 21 jours."
+        description: "Premier jour inclus (AAAA-MM-JJ). Vide : il y a 35 jours."
         required: false
         default: ""
       fin:
@@ -68,7 +68,7 @@ jobs:
           ENTREE_FIN: ${{ inputs.fin }}
           ENTREE_DATASET: ${{ inputs.dataset }}
         run: |
-          echo "debut=${ENTREE_DEBUT:-$(date -u -d '21 days ago' +%F)}" >> "$GITHUB_OUTPUT"
+          echo "debut=${ENTREE_DEBUT:-$(date -u -d '35 days ago' +%F)}" >> "$GITHUB_OUTPUT"
           echo "fin=${ENTREE_FIN:-$(date -u -d 'tomorrow' +%F)}" >> "$GITHUB_OUTPUT"
           echo "dataset=${ENTREE_DATASET:-tous}" >> "$GITHUB_OUTPUT"
 
