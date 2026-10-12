@@ -228,3 +228,6 @@ notebook/
 *.tfstate.*
 crash.log
 tfplan
+backend.hcl
+# Streamlit
+.streamlit/secrets.toml
