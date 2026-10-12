@@ -94,3 +94,8 @@ jobs:
         run: |
           aws s3 sync data/silver "s3://$BUCKET_SILVER/" --exclude "*_manifest.json"
           aws s3 sync data/silver "s3://$BUCKET_SILVER/" --exclude "*" --include "*_manifest.json"
+
+      - name: Matérialiser gold
+        env:
+          DPE_DVF_BUCKET_GOLD: ${{ vars.BUCKET_GOLD }}
+        run: uv run dpe-gold

@@ -22,3 +22,6 @@ class Settings(BaseSettings):
     backoff_max_seconds: float = Field(default=60.0, gt=0)
     dossier_bronze: Path = Path("data/bronze")
     dossier_silver: Path = Path("data/silver")
+    bucket_gold: str | None = None
+    athena_groupe_de_travail: str = "dpe-dvf-dev"
+    dossier_sql_gold: Path = Path("sql/gold")

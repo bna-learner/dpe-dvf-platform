@@ -8,10 +8,13 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "boto3>=1.43.111",
     "httpx>=0.28.1",
+    "pandas>=3.0.6",
     "pyarrow>=25.0.1",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
+    "requests>=2.34.2",
 ]
 
 [build-system]
@@ -20,6 +23,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "botocore[crt]>=1.43.111",
     "mypy>=2.3.1",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
@@ -46,7 +50,8 @@ plugins = ["pydantic.mypy"]
 [project.scripts]
 dpe-ingestion = "dpe_dvf.ingestion.cli:main"
 dpe-silver = "dpe_dvf.transformation.silver:main"
+dpe-gold = "dpe_dvf.transformation.gold:main"
 
 [[tool.mypy.overrides]]
-module = ["pyarrow", "pyarrow.*"]
+module = ["pyarrow", "pyarrow.*", "boto3", "boto3.*", "botocore", "botocore.*"]
 ignore_missing_imports = true
