@@ -41,6 +41,9 @@ resource "aws_iam_role" "ingestion" {
   max_session_duration = 21600 # 6 h : la durée maximale d'un job GitHub Actions
 }
 
+# Numéro de compte, récupéré dynamiquement : jamais écrit en dur.
+data "aws_caller_identity" "courant" {}
+
 # Politique de permissions : CE QUE le rôle peut faire.
 data "aws_iam_policy_document" "ingestion" {
   statement {
@@ -60,10 +63,60 @@ data "aws_iam_policy_document" "ingestion" {
       "${aws_s3_bucket.donnees["silver"].arn}/*",
     ]
   }
+
+  statement {
+    sid       = "ExecuterRequetesAthena"
+    actions   = ["athena:StartQueryExecution", "athena:GetQueryExecution", "athena:StopQueryExecution"]
+    resources = [aws_athena_workgroup.dpe_dvf.arn]
+  }
+
+  statement {
+    sid     = "LireCatalogueGlue"
+    actions = ["glue:GetDatabase", "glue:GetTable", "glue:GetTables", "glue:GetPartitions"]
+    resources = [
+      "arn:aws:glue:${var.region}:${data.aws_caller_identity.courant.account_id}:catalog",
+      aws_glue_catalog_database.dpe_dvf.arn,
+      "arn:aws:glue:${var.region}:${data.aws_caller_identity.courant.account_id}:table/${aws_glue_catalog_database.dpe_dvf.name}/*",
+    ]
+  }
+
+  statement {
+    sid     = "LocaliserBuckets"
+    actions = ["s3:GetBucketLocation"]
+    resources = [
+      aws_s3_bucket.donnees["silver"].arn,
+      aws_s3_bucket.donnees["gold"].arn,
+      aws_s3_bucket.donnees["athena-resultats"].arn,
+    ]
+  }
+
+  statement {
+    sid     = "ListerGoldEtResultats"
+    actions = ["s3:ListBucket", "s3:ListBucketMultipartUploads"]
+    resources = [
+      aws_s3_bucket.donnees["gold"].arn,
+      aws_s3_bucket.donnees["athena-resultats"].arn,
+    ]
+  }
+
+  statement {
+    sid = "EcrireGoldEtResultats"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:AbortMultipartUpload",
+      "s3:ListMultipartUploadParts",
+    ]
+    resources = [
+      "${aws_s3_bucket.donnees["gold"].arn}/*",
+      "${aws_s3_bucket.donnees["athena-resultats"].arn}/*",
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "ingestion" {
-  name   = "acces-bronze-silver"
+  name   = "acces-pipeline-donnees"
   role   = aws_iam_role.ingestion.id
   policy = data.aws_iam_policy_document.ingestion.json
 }
