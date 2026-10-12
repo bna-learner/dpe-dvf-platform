@@ -22,6 +22,9 @@ requires = ["uv_build>=0.12.17,<0.13.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
+dashboard = [
+    "streamlit>=1.65.0",
+]
 dev = [
     "botocore[crt]>=1.43.111",
     "mypy>=2.3.1",
