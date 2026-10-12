@@ -1,0 +1,5 @@
+# Configuration du backend Terraform (state distant sur S3).
+# Copier ce fichier en backend.hcl, qui n'est pas versionné,
+# et renseigner le nom du bucket de state, affiché par :
+#   cd infra/bootstrap && terraform output bucket_state
+bucket = "dpe-dvf-tfstate-XXXXXX"
