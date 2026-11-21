@@ -90,32 +90,41 @@ Les libellés des référentiels sont identiques à ceux de l'API.
 Concordance mesurée sur 1 247 235 DPE présents à la fois dans silver (API) et
 dans la base complète.
 
-| Champ silver | Source | Règle | Concordance |
-|---|---|---|---|
-| `numero_dpe` | `dpe.identifiant_dpe` | | clé |
-| `date_etablissement_dpe` | `dpe.date_etablissement_dpe` | date à l'heure de Paris | 100 % |
-| `date_reception_dpe` | `dpe.date_reception_dpe` | date à l'heure de Paris | 100 % |
-| `date_derniere_modification_dpe` | `dpe.date_derniere_modification` | date à l'heure de Paris | 97,93 % (100 % hors DPE modifiés) |
-| `etiquette_dpe` | `dpe_ep_conso.classe_bilan_dpe` | | 100 % |
-| `etiquette_ges` | `dpe_emission_ges.classe_emission_ges` | | 100 % |
-| `conso_5_usages_ep` | `dpe_ep_conso.ep_conso_5_usages` | arrondi au dixième, en `DECIMAL` | 99,999 % |
-| `conso_5_usages_par_m2_ep` | `dpe_ep_conso.ep_conso_5_usages_m2` | **tronqué** au dixième, en `DECIMAL` | 99,995 % |
-| `type_batiment` | référentiel des méthodes d'application | `type_batiment` | 100 % |
-| `periode_construction` | référentiel des périodes | `lib` | 100 % |
-| `annee_construction` | `dpe_caracteristique_generale.annee_construction` | | 99,98 % |
-| `surface_habitable_logement` | `dpe_caracteristique_generale.surface_habitable_logement` | arrondi au dixième, en `DECIMAL` | 99,99 % |
-| `adresse_brut` | `dpe_t_adresse.adresse_brut` | espaces de début et de fin supprimés | 99,88 % |
-| `nom_commune_brut` | `dpe_t_adresse.nom_commune_brut` | espaces de début et de fin supprimés | 99,999 % |
-| `code_postal_brut` | `dpe_t_adresse.code_postal_brut` | complété à 5 chiffres | 99,95 % |
-| `identifiant_ban` | `dpe_t_adresse.ban_id` | | 99,99 % |
-| `score_ban` | `dpe_t_adresse.ban_score` | arrondi au centième | 99,97 % |
-| `statut_geocodage` | référentiel des statuts | `lib` | 100 % |
-| `code_postal_ban` | `dpe_t_adresse.ban_postcode` | | 99,99 % |
-| `code_insee_ban` | `dpe_t_adresse.ban_citycode` | | 99,99 % |
-| `code_departement_ban` | `dpe_t_adresse.ban_departement` | | 99,98 % |
-| `code_region_ban` | `dpe_t_adresse.ban_region` | | 99,98 % |
-| `coordonnee_cartographique_x_ban` | `dpe_t_adresse.ban_x` | | 99,99 % |
-| `coordonnee_cartographique_y_ban` | `dpe_t_adresse.ban_y` | | 99,99 % |
+| Champ silver | Source | Règle | Concordance | Dictionnaire ADEME |
+|---|---|---|---|---|
+| `numero_dpe` | `dpe.identifiant_dpe` | | clé | confirmé |
+| `date_etablissement_dpe` | `dpe.date_etablissement_dpe` | date à l'heure de Paris | 100 % | absent |
+| `date_reception_dpe` | `dpe.date_reception_dpe` | date à l'heure de Paris | 100 % | confirmé |
+| `date_derniere_modification_dpe` | `dpe.date_derniere_modification` | date à l'heure de Paris | 97,93 % (100 % hors DPE modifiés) | confirmé |
+| `etiquette_dpe` | `dpe_ep_conso.classe_bilan_dpe` | | 100 % | confirmé |
+| `etiquette_ges` | `dpe_emission_ges.classe_emission_ges` | | 100 % | confirmé |
+| `conso_5_usages_ep` | `dpe_ep_conso.ep_conso_5_usages` | arrondi au dixième, en `DECIMAL` | 99,999 % | confirmé (champ nommé `conso_ep_5_usages`) |
+| `conso_5_usages_par_m2_ep` | `dpe_ep_conso.ep_conso_5_usages_m2` | **tronqué** au dixième, en `DECIMAL` | 99,995 % | confirmé (champ nommé `conso_ep_5_usages_par_m2`) |
+| `type_batiment` | référentiel des méthodes d'application | `type_batiment` | 100 % | confirmé |
+| `periode_construction` | référentiel des périodes | `lib` | 100 % | confirmé |
+| `annee_construction` | `dpe_caracteristique_generale.annee_construction` | | 99,98 % | confirmé |
+| `surface_habitable_logement` | `dpe_caracteristique_generale.surface_habitable_logement` | arrondi au dixième, en `DECIMAL` | 99,99 % | confirmé |
+| `adresse_brut` | `dpe_t_adresse.adresse_brut` | espaces de début et de fin supprimés | 99,88 % | **contredit** : le dictionnaire indique `label_brut` (0,01 % mesuré) |
+| `nom_commune_brut` | `dpe_t_adresse.nom_commune_brut` | espaces de début et de fin supprimés | 99,999 % | confirmé |
+| `code_postal_brut` | `dpe_t_adresse.code_postal_brut` | complété à 5 chiffres | 99,95 % | confirmé |
+| `identifiant_ban` | `dpe_t_adresse.ban_id` | | 99,99 % | confirmé |
+| `score_ban` | `dpe_t_adresse.ban_score` | arrondi au centième | 99,97 % | confirmé |
+| `statut_geocodage` | référentiel des statuts | `lib` | 100 % | confirmé |
+| `code_postal_ban` | `dpe_t_adresse.ban_postcode` | | 99,99 % | confirmé |
+| `code_insee_ban` | `dpe_t_adresse.ban_citycode` | | 99,99 % | confirmé |
+| `code_departement_ban` | `dpe_t_adresse.ban_departement` | | 99,98 % | confirmé |
+| `code_region_ban` | `dpe_t_adresse.ban_region` | | 99,98 % | confirmé |
+| `coordonnee_cartographique_x_ban` | `dpe_t_adresse.ban_x` | | 99,99 % | confirmé |
+| `coordonnee_cartographique_y_ban` | `dpe_t_adresse.ban_y` | | 99,99 % | confirmé |
+
+Comparaison avec le dictionnaire de données des jeux de données publié par
+l'ADEME : 22 correspondances sur 24 sont confirmées. Le dictionnaire décrit
+une version antérieure des jeux de données : certains champs y portent un
+autre nom, et la correspondance de l'adresse est contredite par la mesure
+(`label_brut` contient l'adresse suivie du code postal et de la commune, ce que
+l'API n'affiche pas). Il ne documente ni le fuseau horaire des dates, ni les
+arrondis, ni la troncature de la consommation au m² : ces règles viennent
+uniquement de la mesure.
 
 Les colonnes dérivées de silver (`code_departement`, `source_departement`) et
 la validation du modèle `DPE` s'appliquent aux DPE de l'historique comme à
@@ -150,9 +159,17 @@ et `nouvelle_classe_bilan_dpe_pef` (0 % : vides pour ces DPE),
 
 ## Reproduire les mesures
 
-Scripts dans `data/base_ademe/` (non versionnés) :
+## Reproduire les mesures
+
+Scripts dans `scripts/base_complete/`, à lancer depuis la racine du projet ;
+ils lisent la base locale et le silver synchronisé dans `data/` (non
+versionné) :
 
 - `validation.py` : reconstruit les DPE de silver depuis la base complète, et
   calcule la concordance de chaque champ ;
 - `diagnostic.py` : distribution des écarts et exemples ;
 - `regles.py` : vérification des règles d'arrondi et de format.
+
+Dictionnaires de données de l'ADEME (jeux de données, base complète,
+référentiels, tables de valeurs) : publiés avec les jeux de données DPE sur
+data.ademe.fr.
