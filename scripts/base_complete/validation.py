@@ -32,8 +32,8 @@ con.execute("""
         CAST((d.date_derniere_modification AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS DATE)
             AS modif_dpe,
         CAST(
-            (adm.date_derniere_modification AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS DATE)
-            AS modif_administratif,
+            (adm.date_derniere_modification AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS DATE
+            ) AS modif_administratif,
         ep.classe_bilan_dpe,
         ep.nouvelle_classe_bilan_dpe_pef,
         ep.ancienne_classe_bilan_dpe,
