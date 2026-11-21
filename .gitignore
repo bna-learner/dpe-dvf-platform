@@ -231,3 +231,5 @@ tfplan
 backend.hcl
 # Streamlit
 .streamlit/secrets.toml
+dashboard/app_old.py
+*.duckdb
