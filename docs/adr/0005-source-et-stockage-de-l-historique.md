@@ -118,3 +118,10 @@ Négatives :
 - **Cinq semaines pour rattraper une erreur** : au-delà, une photographie
   incorrecte ne peut plus être recalculée depuis bronze ; seuls les changements
   qu'elle a produits subsistent.
+
+## Reproduire les mesures
+Depuis la racine du projet, avec la base locale de `data/base_ademe/` :
+- `scripts/base_complete/partitionnement.py` : répartition des fichiers
+  `part-X` selon l'identifiant du DPE et de l'adresse ;
+- `scripts/base_complete/extraction_prototype.py` : extraction en deux étapes,
+  durée, taille et contrôles de la photographie.
