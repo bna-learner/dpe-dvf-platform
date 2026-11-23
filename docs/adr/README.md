@@ -31,4 +31,5 @@ Les statuts possibles: Proposé, Accepté, Déprécié, Remplacé par ADR-NNNN
 | [0001](0001-structure-du-projet.md) | Structure du projet et outillage Python | Accepté |
 | [0002](0002-strategie-de-branches.md) | Stratégie de branches et d'intégration| Accepté |
 | [0003](0003-acces-du-dashboard-aux-donnees-gold.md) | Accès du dashboard aux données gold | Accepté |
-| [0004](0004-strategie-d-ingestion.md) | Stratégie d'ingestion des DPE | Accepté |
+| [0004](0004-strategie-d-ingestion.md) | Stratégie d'ingestion des DPE | Partiellement remplacé par l'ADR-0005 |
+| [000](0005-source-et-stockage-de-l-historique.md) | Source et stockage de l'historique des DPE | Accepté |
