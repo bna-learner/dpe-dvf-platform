@@ -1,7 +1,7 @@
 # ADR-0004 : Stratégie d'ingestion des DPE
 
 ## Statut
-Accepté
+Partiellement remplacé par l'ADR-0005
 
 ## Date
 2026-11-19
