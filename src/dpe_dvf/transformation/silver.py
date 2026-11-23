@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 from collections import Counter
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -70,6 +70,15 @@ class ResultatSilver:
     nb_rejets: int
 
 
+@dataclass(frozen=True)
+class BilanValidation:
+    """Bilan de la validation d'un ensemble de lignes, quelle que soit leur source."""
+
+    nb_valides: int
+    nb_rejets: int
+    valeurs_ecartees: dict[str, int]
+
+
 def lots_complets(racine_bronze: Path) -> list[Path]:
     """Liste les lots bronze terminés, c'est-à-dire ceux qui ont un manifeste."""
     motif = f"source=*/dataset=*/date_ingestion=*/fenetre=*/{NOM_MANIFESTE}"
@@ -105,23 +114,18 @@ def _departement(dpe: DPE) -> dict[str, str | None]:
     return {"code_departement": None, "source_departement": None}
 
 
-def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver:
-    """Valide un lot bronze et l'écrit en Parquet ; les lignes invalides vont en quarantaine."""
-    manifeste = json.loads((dossier_bronze / NOM_MANIFESTE).read_text(encoding="utf-8"))
-    provenance = {
-        "dataset": manifeste["dataset"],
-        "date_ingestion": date.fromisoformat(manifeste["date_ingestion"]),
-    }
-    partition = _partition(manifeste)
+def valider_et_ecrire(
+    lignes: Iterable[dict[str, Any]], cible: Path, rejets: Path, source: str
+) -> BilanValidation:
+    """Valide chaque ligne avec le modèle DPE et écrit le résultat en silver.
 
-    dossier_cible = racine_silver / "dpe" / partition
-    dossier_rejets = racine_silver / "rejets_dpe" / partition
-    dossier_cible.mkdir(parents=True, exist_ok=True)
-    dossier_rejets.mkdir(parents=True, exist_ok=True)
-
-    cible = dossier_cible / "dpe.parquet"
+    Chaque ligne porte ses colonnes de provenance (`dataset`, `date_ingestion`). Les DPE
+    valides sont écrits en Parquet (SCHEMA_SILVER), les rejets en JSON Lines, puis un
+    manifeste dresse le bilan. Les deux fichiers sont écrits de façon atomique.
+    """
+    cible.parent.mkdir(parents=True, exist_ok=True)
+    rejets.parent.mkdir(parents=True, exist_ok=True)
     cible_tmp = cible.with_name(cible.name + ".tmp")
-    rejets = dossier_rejets / "rejets.jsonl"
     rejets_tmp = rejets.with_name(rejets.name + ".tmp")
 
     nb_valides = 0
@@ -133,7 +137,7 @@ def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver
         pq.ParquetWriter(cible_tmp, SCHEMA_SILVER) as writer,
         rejets_tmp.open("w", encoding="utf-8") as fichier_rejets,
     ):
-        for brut in lire_lignes_bronze(dossier_bronze):
+        for brut in lignes:
             try:
                 dpe = DPE(**brut)
             except ValidationError as erreur:
@@ -149,6 +153,7 @@ def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver
                 if brut.get(champ) is not None and getattr(dpe, champ) is None:
                     valeurs_ecartees[champ] += 1
 
+            provenance = {colonne: brut[colonne] for colonne in COLONNES_PROVENANCE}
             tampon.append({**dpe.model_dump(), **provenance, **_departement(dpe)})
             nb_valides += 1
             if len(tampon) >= TAILLE_TAMPON:
@@ -162,28 +167,47 @@ def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver
     rejets_tmp.replace(rejets)
 
     bilan = {
-        "source": str(dossier_bronze),
+        "source": source,
         "nb_valides": nb_valides,
         "nb_rejets": nb_rejets,
         "valeurs_ecartees": dict(valeurs_ecartees),
     }
-    (dossier_cible / NOM_MANIFESTE).write_text(json.dumps(bilan, indent=2), encoding="utf-8")
+    (cible.parent / NOM_MANIFESTE).write_text(json.dumps(bilan, indent=2), encoding="utf-8")
 
     total = nb_valides + nb_rejets
     taux = nb_rejets / total if total else 0.0
     niveau = logging.WARNING if taux > 0.01 else logging.INFO
     logger.log(
         niveau,
-        "Lot %s : %d lignes valides, %d rejets (%.2f %%)",
-        partition,
+        "%s : %d lignes valides, %d rejets (%.2f %%)",
+        source,
         nb_valides,
         nb_rejets,
         taux * 100,
     )
-
     if valeurs_ecartees:
-        logger.warning("Lot %s : valeurs écartées %s", partition, dict(valeurs_ecartees))
-    return ResultatSilver(cible, nb_valides, nb_rejets)
+        logger.warning("%s : valeurs écartées %s", source, dict(valeurs_ecartees))
+    return BilanValidation(nb_valides, nb_rejets, dict(valeurs_ecartees))
+
+
+def transformer_lot(dossier_bronze: Path, racine_silver: Path) -> ResultatSilver:
+    """Valide un lot bronze de l'API et l'écrit en Parquet ; les rejets vont en quarantaine."""
+    manifeste = json.loads((dossier_bronze / NOM_MANIFESTE).read_text(encoding="utf-8"))
+    provenance = {
+        "dataset": manifeste["dataset"],
+        "date_ingestion": date.fromisoformat(manifeste["date_ingestion"]),
+    }
+    partition = _partition(manifeste)
+    cible = racine_silver / "dpe" / partition / "dpe.parquet"
+
+    lignes = ({**brut, **provenance} for brut in lire_lignes_bronze(dossier_bronze))
+    bilan = valider_et_ecrire(
+        lignes,
+        cible,
+        racine_silver / "rejets_dpe" / partition / "rejets.jsonl",
+        str(dossier_bronze),
+    )
+    return ResultatSilver(cible, bilan.nb_valides, bilan.nb_rejets)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
