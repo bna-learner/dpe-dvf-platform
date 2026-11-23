@@ -25,3 +25,6 @@ class Settings(BaseSettings):
     bucket_gold: str | None = None
     athena_groupe_de_travail: str = "dpe-dvf-dev"
     dossier_sql_gold: Path = Path("sql/gold")
+    base_complete_url: str = "https://s3.fr-par.scw.cloud/prod-dpe-opendata/dpe/dpe.duckdb"
+    dossier_base_complete: Path = Path("data/base_complete")
+    duckdb_memoire_max: str = "8GB"

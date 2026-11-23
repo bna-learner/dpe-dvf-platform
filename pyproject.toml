@@ -55,6 +55,7 @@ plugins = ["pydantic.mypy"]
 dpe-ingestion = "dpe_dvf.ingestion.cli:main"
 dpe-silver = "dpe_dvf.transformation.silver:main"
 dpe-gold = "dpe_dvf.transformation.gold:main"
+dpe-base-complete = "dpe_dvf.base_complete.cli:main"
 
 [[tool.mypy.overrides]]
 module = ["pyarrow", "pyarrow.*", "boto3", "boto3.*", "botocore", "botocore.*"]

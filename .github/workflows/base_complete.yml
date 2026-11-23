@@ -1,0 +1,87 @@
+name: Base complète DPE
+
+on:
+  schedule:
+    - cron: "23 6 * * 2" # chaque mardi à 6 h 23 UTC, après la publication de l'ADEME
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: base-complete-dpe
+  cancel-in-progress: false
+
+jobs:
+  base-complete:
+    name: Photographie, changements et silver
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    env:
+      BUCKET_BRONZE: ${{ vars.BUCKET_BRONZE }}
+      BUCKET_SILVER: ${{ vars.BUCKET_SILVER }}
+      DPE_DVF_DOSSIER_BASE_COMPLETE: data/base_complete
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+
+      - name: Installer les dépendances (sans les outils de dev)
+        run: uv sync --locked --no-dev
+
+      - name: S'authentifier auprès d'AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_INGESTION_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 21600
+          role-session-name: base-complete-${{ github.run_id }}
+          mask-aws-account-id: true
+
+      - name: Fixer la date de la photographie
+        id: date
+        run: echo "jour=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Récupérer la photographie précédente
+        env:
+          JOUR: ${{ steps.date.outputs.jour }}
+        run: |
+          precedente=$(aws s3 ls "s3://$BUCKET_BRONZE/base_complete/instantanes/" \
+            | awk -v jour="date_instantane=$JOUR/" '$1 == "PRE" && $2 < jour {print $2}' \
+            | sort | tail -n 1)
+          precedente="${precedente%/}"
+          if [ -n "$precedente" ]; then
+            echo "Photographie précédente : $precedente"
+            aws s3 sync "s3://$BUCKET_BRONZE/base_complete/instantanes/$precedente" \
+              "$DPE_DVF_DOSSIER_BASE_COMPLETE/bronze/instantanes/$precedente"
+          else
+            echo "Aucune photographie précédente : chargement initial"
+          fi
+
+      - name: Extraire, comparer, transformer
+        env:
+          JOUR: ${{ steps.date.outputs.jour }}
+        run: uv run dpe-base-complete --date "$JOUR"
+
+      - name: Publier bronze sur S3
+        env:
+          JOUR: ${{ steps.date.outputs.jour }}
+        run: |
+          for dossier in instantanes changements; do
+            aws s3 sync "$DPE_DVF_DOSSIER_BASE_COMPLETE/bronze/$dossier/date_instantane=$JOUR" \
+              "s3://$BUCKET_BRONZE/base_complete/$dossier/date_instantane=$JOUR"
+          done
+
+      - name: Publier silver sur S3 (données, puis manifestes)
+        run: |
+          aws s3 sync "$DPE_DVF_DOSSIER_BASE_COMPLETE/silver" "s3://$BUCKET_SILVER/" \
+            --exclude "*_manifest.json"
+          aws s3 sync "$DPE_DVF_DOSSIER_BASE_COMPLETE/silver" "s3://$BUCKET_SILVER/" \
+            --exclude "*" --include "*_manifest.json"
