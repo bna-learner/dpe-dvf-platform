@@ -57,6 +57,20 @@ resource "aws_s3_bucket_lifecycle_configuration" "bronze" {
       noncurrent_days = 30
     }
   }
+  # ADR-0005 : seules les photographies récentes sont conservées ; les changements,
+  # sous base_complete/changements/, sont gardés sans limite de durée.
+  rule {
+    id     = "expirer-photographies-base-complete"
+    status = "Enabled"
+
+    filter {
+      prefix = "base_complete/instantanes/"
+    }
+
+    expiration {
+      days = 35
+    }
+  }
 
   depends_on = [aws_s3_bucket_versioning.bronze]
 }
@@ -71,6 +85,38 @@ resource "aws_s3_bucket_lifecycle_configuration" "athena_resultats" {
 
     expiration {
       days = 7
+    }
+  }
+}
+
+# ADR-0005 : silver de la base complète = état courant de chaque semaine ; l'historique
+# est conservé dans bronze, sous forme de changements.
+resource "aws_s3_bucket_lifecycle_configuration" "silver" {
+  bucket = aws_s3_bucket.donnees["silver"].id
+
+  rule {
+    id     = "expirer-silver-base-complete"
+    status = "Enabled"
+
+    filter {
+      prefix = "dpe_base_complete/"
+    }
+
+    expiration {
+      days = 35
+    }
+  }
+
+  rule {
+    id     = "expirer-rejets-base-complete"
+    status = "Enabled"
+
+    filter {
+      prefix = "rejets_dpe_base_complete/"
+    }
+
+    expiration {
+      days = 35
     }
   }
 }
