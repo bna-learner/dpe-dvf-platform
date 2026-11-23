@@ -69,6 +69,50 @@ resource "aws_glue_catalog_table" "silver_dpe" {
   }
 }
 
+resource "aws_glue_catalog_table" "silver_dpe_base_complete" {
+  database_name = aws_glue_catalog_database.dpe_dvf.name
+  name          = "silver_dpe_base_complete"
+  description   = "DPE actifs de la base complète (ADR-0005), une partition par photographie hebdomadaire."
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    EXTERNAL       = "TRUE"
+    classification = "parquet"
+
+    # Partition projection : les partitions sont déduites de leur nom, sans crawler
+    # ni déclaration à chaque nouvelle photographie.
+    "projection.enabled"                       = "true"
+    "projection.date_instantane.type"          = "date"
+    "projection.date_instantane.format"        = "yyyy-MM-dd"
+    "projection.date_instantane.range"         = "2026-11-01,NOW"
+    "projection.date_instantane.interval"      = "1"
+    "projection.date_instantane.interval.unit" = "DAYS"
+  }
+
+  partition_keys {
+    name = "date_instantane"
+    type = "date"
+  }
+
+  storage_descriptor {
+    location      = "s3://${aws_s3_bucket.donnees["silver"].bucket}/dpe_base_complete/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+
+    ser_de_info {
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+    }
+
+    dynamic "columns" {
+      for_each = local.colonnes_silver_dpe
+      content {
+        name = columns.value.nom
+        type = columns.value.type
+      }
+    }
+  }
+}
+
 resource "aws_athena_workgroup" "dpe_dvf" {
   name          = "dpe-dvf-${var.environnement}"
   description   = "Requêtes de la plateforme DPE et DVF."
