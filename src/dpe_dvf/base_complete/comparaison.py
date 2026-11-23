@@ -37,6 +37,11 @@ class BilanComparaison:
         """Part des DPE de l'ancienne photographie absents de la nouvelle."""
         return self.nb_disparitions / self.nb_dpe_ancien if self.nb_dpe_ancien else 0.0
 
+    @property
+    def part_modifications(self) -> float:
+        """Part des DPE de l'ancienne photographie modifiés dans la nouvelle."""
+        return self.nb_modifications / self.nb_dpe_ancien if self.nb_dpe_ancien else 0.0
+
 
 def _litteral(texte: str) -> str:
     """Chaîne SQL entre apostrophes, avec les apostrophes internes doublées."""
@@ -63,23 +68,32 @@ def comparer_instantanes(
     sortie: Path,
     date_instantane: date,
     seuil_disparitions: float = 0.01,
+    seuil_modifications: float = 0.10,
 ) -> BilanComparaison:
     """Écrit dans `sortie` les DPE ajoutés, modifiés ou disparus entre deux photographies.
 
     `nouveau` et `ancien` sont des chemins ou des motifs de fichiers Parquet. Sans ancienne
-    photographie (chargement initial), tous les DPE sont des ajouts.
+    photographie (chargement initial), tous les DPE sont des ajouts. Les noms de dossiers
+    ne sont jamais interprétés comme des colonnes (partitionnement Hive désactivé).
 
-    Lève ComparaisonError si une photographie contient un DPE en double, si les deux
-    photographies n'ont pas le même schéma, ou si la part de DPE disparus dépasse
-    `seuil_disparitions` : la nouvelle photographie est alors probablement incomplète.
+    Lève ComparaisonError, avant toute écriture, si une photographie contient un DPE en
+    double, si les deux photographies n'ont pas le même schéma, si la part de DPE disparus
+    dépasse `seuil_disparitions` (photographie probablement incomplète), ou si la part de
+    DPE modifiés dépasse `seuil_modifications` (colonne ou format probablement changé).
     """
     con = duckdb.connect()
     con.execute("SET preserve_insertion_order = false")
-    con.execute(f"CREATE VIEW nouveau AS SELECT * FROM read_parquet({_litteral(nouveau)})")
+    con.execute(
+        f"CREATE VIEW nouveau AS SELECT * "
+        f"FROM read_parquet({_litteral(nouveau)}, hive_partitioning = false)"
+    )
     if ancien is None:
         con.execute("CREATE VIEW ancien AS SELECT * FROM nouveau WHERE false")
     else:
-        con.execute(f"CREATE VIEW ancien AS SELECT * FROM read_parquet({_litteral(ancien)})")
+        con.execute(
+            f"CREATE VIEW ancien AS SELECT * "
+            f"FROM read_parquet({_litteral(ancien)}, hive_partitioning = false)"
+        )
         if _schema(con, "ancien") != _schema(con, "nouveau"):
             raise ComparaisonError("Les deux photographies n'ont pas le même schéma")
 
@@ -121,6 +135,11 @@ def comparer_instantanes(
         raise ComparaisonError(
             f"{bilan.nb_disparitions} DPE disparus ({bilan.part_disparitions:.2%}), au-delà "
             f"du seuil de {seuil_disparitions:.2%} : photographie probablement incomplète"
+        )
+    if bilan.part_modifications > seuil_modifications:
+        raise ComparaisonError(
+            f"{bilan.nb_modifications} DPE modifiés ({bilan.part_modifications:.2%}), au-delà "
+            f"du seuil de {seuil_modifications:.2%} : colonne ou format probablement changé"
         )
 
     sortie.parent.mkdir(parents=True, exist_ok=True)

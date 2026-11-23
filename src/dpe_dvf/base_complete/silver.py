@@ -67,7 +67,7 @@ def _requete(photographie: str) -> str:
             ban_region AS code_region_ban,
             {_fini("ban_x")} AS coordonnee_cartographique_x_ban,
             {_fini("ban_y")} AS coordonnee_cartographique_y_ban
-        FROM read_parquet({_litteral(photographie)})
+        FROM read_parquet({_litteral(photographie)}, hive_partitioning = false)
         WHERE NOT desactive AND NOT suppression_en_cours
     """
 

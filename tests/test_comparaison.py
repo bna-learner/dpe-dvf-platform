@@ -68,7 +68,12 @@ def test_ajout_modification_et_disparition(tmp_path: Path) -> None:
     )
 
     bilan = comparer_instantanes(
-        nouveau, ancien, tmp_path / "c.parquet", JOUR, seuil_disparitions=0.5
+        nouveau,
+        ancien,
+        tmp_path / "c.parquet",
+        JOUR,
+        seuil_disparitions=0.5,
+        seuil_modifications=1.0,
     )
 
     assert (bilan.nb_ajouts, bilan.nb_modifications, bilan.nb_disparitions) == (1, 1, 1)
@@ -86,7 +91,9 @@ def test_une_desactivation_est_une_modification(tmp_path: Path) -> None:
     ancien = ecrire(tmp_path / "a.parquet", [dpe("A")])
     nouveau = ecrire(tmp_path / "n.parquet", [dpe("A", desactive=True)])
 
-    bilan = comparer_instantanes(nouveau, ancien, tmp_path / "c.parquet", JOUR)
+    bilan = comparer_instantanes(
+        nouveau, ancien, tmp_path / "c.parquet", JOUR, seuil_modifications=1.0
+    )
 
     assert bilan.nb_modifications == 1
     assert lire(tmp_path / "c.parquet")["A"]["desactive"] is True
@@ -96,7 +103,9 @@ def test_une_valeur_vide_qui_devient_renseignee_est_detectee(tmp_path: Path) -> 
     ancien = ecrire(tmp_path / "a.parquet", [dpe("A", etiquette=None)])
     nouveau = ecrire(tmp_path / "n.parquet", [dpe("A", etiquette="E")])
 
-    bilan = comparer_instantanes(nouveau, ancien, tmp_path / "c.parquet", JOUR)
+    bilan = comparer_instantanes(
+        nouveau, ancien, tmp_path / "c.parquet", JOUR, seuil_modifications=1.0
+    )
 
     assert bilan.nb_modifications == 1
 
@@ -122,6 +131,33 @@ def test_trop_de_disparitions_arrete_avant_ecriture(tmp_path: Path) -> None:
     nouveau = ecrire(tmp_path / "n.parquet", [dpe(str(i)) for i in range(90)])
 
     with pytest.raises(ComparaisonError, match="disparus"):
+        comparer_instantanes(nouveau, ancien, tmp_path / "c.parquet", JOUR)
+
+    assert not (tmp_path / "c.parquet").exists()
+
+
+def test_les_noms_de_dossiers_n_ajoutent_aucune_colonne(tmp_path: Path) -> None:
+    lignes = [dpe("A"), dpe("B")]
+    for jour in ("2026-11-23", "2026-11-24"):
+        dossier = tmp_path / f"date_instantane={jour}"
+        dossier.mkdir()
+        ecrire(dossier / "part-0.parquet", lignes)
+
+    bilan = comparer_instantanes(
+        str(tmp_path / "date_instantane=2026-11-24" / "*.parquet"),
+        str(tmp_path / "date_instantane=2026-11-23" / "*.parquet"),
+        tmp_path / "c.parquet",
+        JOUR,
+    )
+
+    assert bilan.nb_changements == 0
+
+
+def test_trop_de_modifications_arrete_avant_ecriture(tmp_path: Path) -> None:
+    ancien = ecrire(tmp_path / "a.parquet", [dpe(str(i)) for i in range(100)])
+    nouveau = ecrire(tmp_path / "n.parquet", [dpe(str(i), etiquette="G") for i in range(100)])
+
+    with pytest.raises(ComparaisonError, match="modifiés"):
         comparer_instantanes(nouveau, ancien, tmp_path / "c.parquet", JOUR)
 
     assert not (tmp_path / "c.parquet").exists()

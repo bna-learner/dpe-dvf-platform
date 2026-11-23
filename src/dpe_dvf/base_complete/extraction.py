@@ -194,7 +194,7 @@ def _controler(con: duckdb.DuckDBPyConnection, dossier: Path) -> tuple[int, int,
                      AND (classe_bilan_dpe IS NULL OR classe_emission_ges IS NULL
                           OR type_batiment IS NULL OR statut_geocodage IS NULL)),
             count_if(numero_dpe_remplacant IS NOT NULL)
-        FROM read_parquet({_litteral(str(dossier / "*.parquet"))})
+        FROM read_parquet({_litteral(str(dossier / "*.parquet"))}, hive_partitioning = false)
     """).fetchall()[0]
     if nb_lignes == 0:
         raise ExtractionError("Photographie vide")
