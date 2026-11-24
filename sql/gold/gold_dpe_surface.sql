@@ -11,7 +11,7 @@ SELECT
   type_batiment,
   count(*) AS nb_dpe,
   avg(CASE WHEN etiquette_dpe IN ('F', 'G') THEN 1.0 ELSE 0.0 END) AS part_passoires
-FROM dpe_dvf_dev.silver_dpe_courant
+FROM dpe_dvf_dev.silver_dpe_base_complete_courant
 WHERE dataset = 'dpe03existant'
   AND etiquette_dpe IS NOT NULL
   AND surface_habitable_logement IS NOT NULL

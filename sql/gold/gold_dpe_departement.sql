@@ -10,7 +10,7 @@ SELECT
   etiquette_dpe,
   count(*) AS nb_dpe,
   count_if(source_departement = 'code_postal') AS nb_dpe_departement_deduit
-FROM dpe_dvf_dev.silver_dpe_courant
+FROM dpe_dvf_dev.silver_dpe_base_complete_courant
 WHERE etiquette_dpe IS NOT NULL
   AND code_departement IS NOT NULL
 GROUP BY 1, 2, 3

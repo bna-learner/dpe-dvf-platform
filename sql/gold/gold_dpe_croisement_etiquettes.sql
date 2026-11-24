@@ -8,7 +8,7 @@ SELECT
     WHEN 'dpe02neuf' THEN 'neuf'
   END AS type_logement,
   count(*) AS nb_dpe
-FROM dpe_dvf_dev.silver_dpe_courant
+FROM dpe_dvf_dev.silver_dpe_base_complete_courant
 WHERE etiquette_dpe IS NOT NULL
   AND etiquette_ges IS NOT NULL
 GROUP BY 1, 2, 3

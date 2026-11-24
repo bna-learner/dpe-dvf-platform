@@ -9,7 +9,7 @@ SELECT
   count(*) AS nb_dpe,
   avg(conso_5_usages_par_m2_ep) AS conso_ep_m2_moyenne,
   approx_percentile(conso_5_usages_par_m2_ep, 0.5) AS conso_ep_m2_mediane
-FROM dpe_dvf_dev.silver_dpe_courant
+FROM dpe_dvf_dev.silver_dpe_base_complete_courant
 WHERE etiquette_dpe IS NOT NULL
   AND conso_5_usages_par_m2_ep IS NOT NULL
 GROUP BY 1, 2
