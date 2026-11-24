@@ -89,8 +89,8 @@ def formater_entier(nombre: int) -> str:
 
 st.title("Passoires thermiques et performance énergétique des logements")
 st.caption(
-    "DPE établis depuis juin 2026 · Source : ADEME, Licence Ouverte · "
-    f"Données mises à jour le {date_mise_a_jour()}"
+    "DPE établis depuis juillet 2021 (méthode actuelle) · Source : ADEME, base complète, "
+    f"Licence Ouverte · Données mises à jour le {date_mise_a_jour()}"
 )
 st.info(
     "Un DPE n'est établi qu'à la vente, à la location ou à la construction d'un logement : "
@@ -101,9 +101,9 @@ with st.sidebar:
     type_logement = st.radio("Type de logement", ["existant", "neuf"], index=0)
     st.markdown("---")
     st.markdown(
-        "Plateforme de données construite sur AWS : ingestion de l'API de l'ADEME, "
-        "couches bronze, silver et gold, requêtes Athena, infrastructure Terraform, "
-        "pipeline GitHub Actions."
+        "Plateforme de données construite sur AWS : photographie hebdomadaire de la base "
+        "complète de l'ADEME avec DuckDB, couches bronze, silver et gold, requêtes Athena, "
+        "infrastructure Terraform, pipeline GitHub Actions."
     )
     st.markdown("[natchiadata.dev](https://natchiadata.dev)")
 
@@ -343,13 +343,14 @@ if type_logement == "existant":
 with st.expander("Méthodologie et limites"):
     st.markdown(
         """
-- **Source** : API de l'ADEME, DPE logements existants et neufs, ingérés chaque semaine.
-- **Dédoublonnage** : une ligne par DPE, sa version la plus récente.
+- **Source** : base complète des DPE de l'ADEME, logements existants et neufs, photographiée
+  chaque semaine, depuis l'entrée en vigueur de la méthode actuelle (juillet 2021).
+- **Périmètre** : DPE en vigueur uniquement ; les DPE remplacés ou désactivés sont exclus.
 - **Département** : celui du géocodage de l'adresse (BAN) ; à défaut, déduit du code postal
   saisi par le diagnostiqueur (part indiquée en haut de page).
 - **Médianes approchées** (`approx_percentile` d'Athena).
-- **Délai de publication** : l'ADEME publie les DPE par lots, avec plusieurs jours de retard ;
-  les dernières semaines sont incomplètes.
+- **Fraîcheur** : la base de l'ADEME est publiée chaque mardi ; les données sont mises à jour
+  le jour même.
 - **Représentativité** : la base ne couvre que les DPE établis, pas l'ensemble du parc.
 """
     )
